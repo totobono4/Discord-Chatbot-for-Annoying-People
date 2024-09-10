@@ -1,0 +1,26 @@
+{
+  "name": "discord-chatbot-for-annoying-people",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node index.js",
+    "dev": "nodemon index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/totobono4/Discord-Chatbot-for-Annoying-People.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/totobono4/Discord-Chatbot-for-Annoying-People/issues"
+  },
+  "homepage": "https://github.com/totobono4/Discord-Chatbot-for-Annoying-People#readme",
+  "dependencies": {
+    "nodemon": "^3.1.4",
+    "puppeteer": "^23.3.0"
+  }
+}
