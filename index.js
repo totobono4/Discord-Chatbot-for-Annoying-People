@@ -209,7 +209,7 @@ async function getMessageInfos(page, lastMessageSelector) {
 
 async function handleOllama(question) {
     const message = { role: 'user', content: question }
-    const response = await ollama.chat({ model: 'stablelm2:12b', messages: [message], stream: true })
+    const response = await ollama.chat({ model: MODEL, messages: [message], stream: true })
     let text = "";
     for await (const part of response) {
         text += part.message.content;
@@ -219,7 +219,7 @@ async function handleOllama(question) {
 
 async function configOllama(config) {
     const message = { role: 'user', content: config }
-    await ollama.chat({ model: 'stablelm2:12b', messages: [message], stream: false })
+    await ollama.chat({ model: MODEL, messages: [message], stream: false })
 }
 
 async function main() {
@@ -232,5 +232,7 @@ async function main() {
 
     discord_puppeteer();
 }
+
+const MODEL = 'wizard-vicuna-uncensored';
 
 main()
