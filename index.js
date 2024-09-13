@@ -102,7 +102,9 @@ async function getListPeopleHierarchy(page, divSelector) {
 }
 
 async function discord_puppeteer() {
-    const browser = await puppeteer.launch({ headless: false, slowMo: 0 });
+    const browser = await puppeteer.launch({
+        headless: true
+    });
     const page = await browser.newPage();
     await page.goto(discordLogin, { waitUntil: 'domcontentloaded' });
     await page.setViewport({ width: 800, height: 800 })
@@ -177,6 +179,7 @@ async function getMessageInfos(page, lastMessageSelector) {
         const user = document.querySelector('section[aria-label="Zone utilisateur"]>div>div>div>div>div').innerText
 
         const list_message = document.querySelectorAll(lastMessage);
+
         const anoying_list_message = [];
 
         let last_message_user_span = null;
@@ -193,6 +196,12 @@ async function getMessageInfos(page, lastMessageSelector) {
         }
 
         const last_message = anoying_list_message[anoying_list_message.length-1];
+        if (!last_message) {
+            return {
+                id: "",
+                text: "",
+            }
+        }
         const span_text = last_message.querySelectorAll('div>div>div>span');
         let text = "";
         for (span of span_text) {
@@ -223,7 +232,10 @@ async function configOllama(config) {
 }
 
 async function main() {
-    // await discord_puppeteer();
+    if (!MODEL) {
+        console.log("mettez un MODEL dans un .env");
+        return;
+    }
 
     const config =
         "";
@@ -233,6 +245,6 @@ async function main() {
     discord_puppeteer();
 }
 
-const MODEL = 'wizard-vicuna-uncensored';
+const MODEL = process.env.OLLAMA_MODEL || null;
 
 main()
