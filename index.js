@@ -179,13 +179,15 @@ async function getMessageInfos(page, lastMessageSelector) {
         const list_message = document.querySelectorAll(lastMessage);
         const anoying_list_message = [];
 
+        let last_message_user_span = null;
+
         for (const message of list_message) {
-            const message_user_span = message.querySelector('div>div>h3>span>span');
-            if (!message_user_span) {
-                anoying_list_message.push(message);
-                continue;
+            const new_message_user_span = message.querySelector('div>div>h3>span>span');
+            if (!new_message_user_span) {
+                if (!last_message_user_span) continue;
+                new_message_user_span = last_message_user_span;
             }
-            const message_user = message_user_span.innerText;
+            const message_user = new_message_user_span.innerText;
             if (message_user == user) continue;
             anoying_list_message.push(message);
         }
@@ -224,8 +226,7 @@ async function main() {
     // await discord_puppeteer();
 
     const config =
-        "Parles-moi en français." +
-        "Arrête de m'expliquer tout";
+        "";
 
     await configOllama(config);
 
