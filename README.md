@@ -1,11 +1,11 @@
 # Discord-Chatbot-for-Annoying-People
 
-## installez node et ollama :
+## Installez node et ollama :
  - https://nodejs.org/en/download &emsp; *v20.10.0 recommandé*
  - https://ollama.com/download &emsp; &emsp;*v0.3.10 recommandé*
 
 ### Lancez une console :
- - installer un model ex: `ollama run wizard-vicuna-uncensored:13b`
+ - installez un model ex: `ollama run wizard-vicuna-uncensored:13b`
  - Faite un npm i
  - Puis faite un npm start pour lancer le programe
 
