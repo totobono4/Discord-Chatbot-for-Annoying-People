@@ -30,6 +30,8 @@ const config_model =
         "" +
         "";
 
+let anoying_people = '';
+let user = '';
 
 const waitFor = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -159,7 +161,7 @@ async function discord_puppeteer() {
 
     let isAnoying_people = true;
     while(isAnoying_people) {
-        const { anoying_people } = await askAnoyingPeople()
+        anoying_people = (await askAnoyingPeople()).anoying_people
 
         await page.waitForSelector(discordQuerySelectors.list_people);
     
@@ -207,6 +209,7 @@ async function discord_puppeteer() {
     let message_infos = await getMessageInfos(page, discordQuerySelectors.last_message);
 
     while (true) {
+        log("AI waiting...");
         const new_message_infos = await getMessageInfos(page, discordQuerySelectors.last_message);
         await waitFor(1000);
         if (message_infos.id == new_message_infos.id) continue;
@@ -219,7 +222,7 @@ async function discord_puppeteer() {
 
 async function getMessageInfos(page, lastMessageSelector) {
     return await page.evaluate((lastMessage) => {
-        const user = document.querySelector('section>div>div>div>div>div').innerText
+        user = document.querySelector('section>div>div>div>div>div').innerText
 
         const list_message = document.querySelectorAll(lastMessage);
         const anoying_list_message = [];
@@ -260,12 +263,17 @@ async function getMessageInfos(page, lastMessageSelector) {
 
 async function handleOllama(question) {
     const message = { role: 'user', content: question }
+    log("AI writing...");
     const response = await ollama.chat({ model: MODEL, messages: [message], stream: true })
     let text = "";
     for await (const part of response) {
         text += part.message.content;
     }
     return text;
+}
+
+function log(log) {
+    process.stdout.write(`\r${log}`);
 }
 
 async function main() {
