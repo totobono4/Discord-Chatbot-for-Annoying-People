@@ -5,7 +5,7 @@
  - https://ollama.com/download &emsp; &emsp;*v0.3.10 recommandé*
 
 ### Lancez une console :
- - installez un model ex: `ollama run wizard-vicuna-uncensored:13b`
+ - installez un model ex: `ollama pull wizard-vicuna-uncensored:13b`
  - Faite un npm i
  - Puis faite un npm start pour lancer le programe
 
