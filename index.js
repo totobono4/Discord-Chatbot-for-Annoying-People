@@ -9,19 +9,27 @@ const discordLogin = "https://discord.com/login";
 
 const discordQuerySelectors = {
     email: 'input[name="email"]',
+    captcha: 'div[role="dialog"]',
+    invalid: 'label[class="label_c46f6a eyebrow_c46f6a defaultColor_c46f6a defaultMarginlabel_c46f6a error_c46f6a"]',
     password: 'input[name="password"]',
-    connexion: 'Connexion',
-    verify_other: 'Vérifier avec autre chose',
-    a2f: 'Utilise ton application d\'authentification',
+    connexion: 'button[type="submit"]',
+    verify_other: 'div[style="flex: 0 0 auto;"]>button:first-child',
+    a2f: 'div[role="button"]:nth-last-child(4)',
+    a2fInvalid: 'div[style="color: var(--text-danger);"]',
     input_a2f: 'input[autocomplete="one-time-code"]',
-    a2f_confirm: 'Confirmer',
-    search_anoying_people: 'input[placeholder="Rechercher"]',
-    tous_div: 'Tous',
-    list_people: 'div[data-list-id="people-list"] div>div[role="listitem"]>div',
-    input_text: 'div[role=\"textbox\"]',
+    a2f_confirm: 'button[type="submit"]',
+    search_anoying_people: 'div[role="tabpanel"]>div>div>input',
+    tous_div: 'div[role="tab"]:nth-of-type(2)',
+    list_people: 'div[role="list"] div>div[role="listitem"]>div',
+    list_anoying_guys: 'div[role="list"] div>div[role="listitem"]>div>div>div:nth-of-type(2)>div>span',
 
-    last_message: 'ol[data-list-id="chat-messages"] li',
+    last_message: 'ol[role="list"] li',
 }
+
+const config_model =
+        "" +
+        "";
+
 
 const waitFor = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -44,57 +52,35 @@ async function askA2f() {
 async function askCredentials() {
     const questions = [];
 
-    if (process.env.DISCORD_EMAIL === undefined) questions.push({ type: 'input', name: 'email', message: 'Entrez votre email :' });
-    if (process.env.DISCORD_PASSWORD === undefined) questions.push({ type: 'password', name: 'password', message: 'Entrez votre mot de passe :', mask: '*' });
+    if (process.env.DISCORD_EMAIL === undefined || process.env.DISCORD_EMAIL === "") questions.push({ type: 'input', name: 'email', message: 'Entrez votre email :' });
+    if (process.env.DISCORD_PASSWORD === undefined || process.env.DISCORD_PASSWORD === "") questions.push({ type: 'password', name: 'password', message: 'Entrez votre mot de passe :', mask: '*' });
 
     let answer = await inquirer.prompt(questions);
 
-    if (process.env.DISCORD_EMAIL !== undefined) answer.email = process.env.DISCORD_EMAIL;
-    if (process.env.DISCORD_PASSWORD !== undefined) answer.password = process.env.DISCORD_PASSWORD;
+    if (process.env.DISCORD_EMAIL !== undefined && process.env.DISCORD_EMAIL !== "") answer.email = process.env.DISCORD_EMAIL;
+    if (process.env.DISCORD_PASSWORD !== undefined && process.env.DISCORD_PASSWORD !== "") answer.password = process.env.DISCORD_PASSWORD;
+
+    if (answer.email === "") answer.email = " ";
+    if (answer.password === "") answer.password = " ";
 
     return { email: answer.email, password: answer.password };
 }
 
-async function findTabDiv(page, query) {
-    return await page.evaluateHandle((query) => {
-        const divs = document.querySelectorAll('div[role="tab"]');
-        for (const div of divs) {
-            if (div && div.innerText.includes(query)) {
-                return div;
-            }
-        }
-        
-        return null;
-    }, query);
+async function invalid(page, divSelector) {
+    return await page.evaluateHandle((selector) => {
+        const element = document.querySelector(selector);
+        return element;
+    }, divSelector);
 }
 
-async function findDivChild(page, query) {
-    return await page.evaluateHandle((query) => {
-        const divs = document.querySelectorAll('div');
-        for (const div of divs) {
-            const childDiv = div.querySelector('div');
-            if (childDiv && childDiv.innerText.includes(query)) {
-                return div;
-            }
-        }
-        return null;
-    }, query);
+async function findButton(page, divSelector) {
+    return await page.evaluateHandle((selector) => {
+        const element = document.querySelector(selector);
+        return element;
+    }, divSelector);
 }
 
-async function findButton(page, query) {
-    return await page.evaluateHandle((query) => {
-        const buttons = document.querySelectorAll('button');
-        for (const button of buttons) {
-            const div = button.querySelector('div');
-            if (div && div.innerText.includes(query)) {
-                return button;
-            }
-        }
-        return null;
-    }, query);
-}
-
-async function getListPeopleHierarchy(page, divSelector) {
+async function guyExist(page, divSelector) {
     return await page.evaluateHandle((selector) => {
         const element = document.querySelector(selector);
         return element;
@@ -102,62 +88,119 @@ async function getListPeopleHierarchy(page, divSelector) {
 }
 
 async function discord_puppeteer() {
-    const browser = await puppeteer.launch({
-        headless: true
-    });
+    const browser = await puppeteer.launch({ headless: false });
     const page = await browser.newPage();
     await page.goto(discordLogin, { waitUntil: 'domcontentloaded' });
-    await page.setViewport({ width: 800, height: 800 })
+    // await page.setViewport({ width: 800, height: 800 })
+    let connexionBoolean = true;
+    while(connexionBoolean) {
+        const { email, password } = await askCredentials();
 
-    const { email, password } = await askCredentials();
+        await page.waitForSelector(discordQuerySelectors.email);
+        const input_email = await page.$(discordQuerySelectors.email);
+        await input_email.type(email);
 
-    await page.waitForSelector(discordQuerySelectors.email);
-    const input_email = await page.$(discordQuerySelectors.email);
-    await input_email.type(email);
+        await page.waitForSelector(discordQuerySelectors.password);
+        const input_password = await page.$(discordQuerySelectors.password);
+        await input_password.type(password);
 
-    await page.waitForSelector(discordQuerySelectors.password);
-    const input_password = await page.$(discordQuerySelectors.password);
-    await input_password.type(password);
+        const button_connexion = await findButton(page, discordQuerySelectors.connexion);
+        await button_connexion.click();
 
-    const button_connexion = await findButton(page, discordQuerySelectors.connexion);
-    await button_connexion.click();
+        await waitFor(2000);
 
-    await waitFor(3000);
+        const isCaptcha = await invalid(page, discordQuerySelectors.captcha);
 
-    const button_verify_other = await findButton(page, discordQuerySelectors.verify_other);
-    await button_verify_other.click();
+        const isInvalid = await invalid(page, discordQuerySelectors.invalid);
 
-    await waitFor(1000);
+        if (Object.keys(isInvalid).length !== 0 || Object.keys(isCaptcha).length !== 0) {
+            connexionBoolean = true;
+            await page.reload();
+            continue;
+        }
 
-    const button_a2f = await findDivChild(page, discordQuerySelectors.a2f);
-    await button_a2f.click(button_a2f);
+        await waitFor(2000);
+    
+        const button_verify_other = await findButton(page, discordQuerySelectors.verify_other);
+        if (Object.keys(button_verify_other).length !== 0) {
+            connexionBoolean = false;
+        }
+        await button_verify_other.click();
+        
+        await waitFor(1000);
+    
+        const button_a2f = await findButton(page, discordQuerySelectors.a2f);
+        await button_a2f.click(button_a2f);
+        
+        await waitFor(1000);
+        
+        const { a2f } = await askA2f();
+    
+        await page.waitForSelector(discordQuerySelectors.input_a2f);
+        const input_a2f = await page.$(discordQuerySelectors.input_a2f);
+        await input_a2f.click({ clickCount: 3 })
+        await input_a2f.type(a2f);
+        
+        const button_a2f_confirm = await findButton(page, discordQuerySelectors.a2f_confirm);
+        await button_a2f_confirm.click();
+    
+        await waitFor(2000);
+    
+        const isInvalida2f = await invalid(page, discordQuerySelectors.a2fInvalid);
+    
+        if (Object.keys(isInvalida2f).length !== 0) {
+            connexionBoolean = true;
+            await page.reload();
+            continue;
+        } 
 
-    await waitFor(1000);
+        connexionBoolean = false;
+    } 
 
-    const { a2f } = await askA2f();
+    let isAnoying_people = true;
+    while(isAnoying_people) {
+        const { anoying_people } = await askAnoyingPeople()
 
-    await page.waitForSelector(discordQuerySelectors.input_a2f);
-    const input_a2f = await page.$(discordQuerySelectors.input_a2f);
-    await input_a2f.type(a2f);
+        await page.waitForSelector(discordQuerySelectors.list_people);
+    
+        const tous_div = await findButton(page, discordQuerySelectors.tous_div);
+        await tous_div.click();
+    
+        await page.waitForSelector(discordQuerySelectors.search_anoying_people);
+        const input_search = await page.$(discordQuerySelectors.search_anoying_people);
+        await input_search.click({ clickCount: 3 })
+        await input_search.type(anoying_people);
+    
+        await waitFor(1000);
 
-    const button_a2f_confirm = await findButton(page, discordQuerySelectors.a2f_confirm);
-    await button_a2f_confirm.click();
+        async function getAnoying_guy(page, divSelector, divSelectorsearch_anoying_people) {
+            return await page.evaluateHandle((divSelector, divSelectorsearch_anoying_people) => {
+                const input_search = document.querySelector(divSelector);
+                const anoying_people = input_search.value;
+    
+                const list_anoying_guys= document.querySelectorAll(divSelectorsearch_anoying_people)
+                let anoying_guy;
+                for (const user of list_anoying_guys) {
+                    if (user.innerText !== anoying_people) continue;
+                    anoying_guy = user;
+                }
+                
+                return anoying_guy;
+            }, divSelector, divSelectorsearch_anoying_people);
+        }
+        const final_anoying_guy = await getAnoying_guy(page, discordQuerySelectors.search_anoying_people, discordQuerySelectors.list_anoying_guys);
 
-    const { anoying_people } = await askAnoyingPeople()
-
-    await page.waitForSelector(discordQuerySelectors.list_people);
-
-    const tous_div = await findTabDiv(page, discordQuerySelectors.tous_div);
-    await tous_div.click();
-
-    await page.waitForSelector(discordQuerySelectors.search_anoying_people);
-    const input_search = await page.$(discordQuerySelectors.search_anoying_people);
-    await input_search.type(anoying_people);
-
-    await waitFor(1000);
-
-    const anoying_guy = await getListPeopleHierarchy(page, discordQuerySelectors.list_people);
-    await anoying_guy.click();
+        if (Object.keys(final_anoying_guy).length === 0 ) {
+            isAnoying_people = true;
+            await page.reload();
+            console.log("Vous n'avez pas '" + anoying_people + "' en ami ou il n'existe pas")
+            continue;
+        }  else {
+            await final_anoying_guy.click();
+        }
+        
+        isAnoying_people = false;
+    }
 
     await waitFor(1000);
 
@@ -169,17 +212,16 @@ async function discord_puppeteer() {
         if (message_infos.id == new_message_infos.id) continue;
         message_infos = new_message_infos;
         
-        await page.keyboard.type(await handleOllama(message_infos.text));
+        await page.keyboard.type(await handleOllama(config_model + " " + message_infos.text));
         await page.keyboard.press('Enter');
     }
 }
 
 async function getMessageInfos(page, lastMessageSelector) {
     return await page.evaluate((lastMessage) => {
-        const user = document.querySelector('section[aria-label="Zone utilisateur"]>div>div>div>div>div').innerText
+        const user = document.querySelector('section>div>div>div>div>div').innerText
 
         const list_message = document.querySelectorAll(lastMessage);
-
         const anoying_list_message = [];
 
         let last_message_user_span = null;
@@ -226,21 +268,11 @@ async function handleOllama(question) {
     return text;
 }
 
-async function configOllama(config) {
-    const message = { role: 'user', content: config }
-    await ollama.chat({ model: MODEL, messages: [message], stream: false })
-}
-
 async function main() {
     if (!MODEL) {
-        console.log("mettez un MODEL dans un .env");
+        console.log("mettez un MODEL dans le .env");
         return;
     }
-
-    const config =
-        "";
-
-    await configOllama(config);
 
     discord_puppeteer();
 }
