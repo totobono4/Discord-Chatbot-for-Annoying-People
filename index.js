@@ -93,7 +93,7 @@ async function discord_puppeteer() {
     const browser = await puppeteer.launch({ headless: false });
     const page = await browser.newPage();
     await page.goto(discordLogin, { waitUntil: 'domcontentloaded' });
-    // await page.setViewport({ width: 800, height: 800 })
+    await page.setViewport({ width: 800, height: 800 })
     let connexionBoolean = true;
     while(connexionBoolean) {
         const { email, password } = await askCredentials();
